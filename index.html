@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="SuperEditor - 本地优先的 Markdown 文档编辑器，支持 PPT、PDF、Word 等格式导入导出" />
+    <meta name="theme-color" content="#f3f4f6" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="alternate icon" type="image/x-icon" href="./favicon.ico" />
+    <link rel="apple-touch-icon" href="./icons/icon-180.png" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <title>SuperEditor</title>
+  </head>
+  <body>
+    <div id="app" class="app">
+      <header class="titlebar">
+        <div class="titlebar-left">
+          <span id="logo-slot" aria-hidden="true"></span>
+          <span class="app-name">SuperEditor</span>
+          <button class="icon-btn sm" id="btn-toggle-sidebar" data-icon="panel-left" title="显示/隐藏侧栏 (Ctrl+Shift+B)"></button>
+          <span class="titlebar-sep"></span>
+          <div class="doc-meta">
+            <input id="doc-title" class="doc-title-input" value="未命名文档" spellcheck="false" aria-label="文档标题" />
+            <span id="save-state" class="save-state" title="本地自动保存">已保存</span>
+          </div>
+        </div>
+        <div class="titlebar-right">
+          <button class="sync-indicator" id="btn-sync" data-state="local" title="同步设置"><span class="sync-dot"></span><span id="sync-state">仅本地</span></button>
+          <button class="icon-btn sm" id="btn-theme" data-icon="sun" title="切换深色 / 浅色主题"></button>
+          <button class="icon-btn sm" id="btn-settings" data-icon="settings" title="编辑器设置"></button>
+          <div class="window-controls" id="window-controls" hidden>
+            <button class="win-btn" id="win-minimize" data-icon="minus" title="最小化"></button>
+            <button class="win-btn" id="win-maximize" data-icon="square" title="最大化 / 还原"></button>
+            <button class="win-btn win-close" id="win-close" data-icon="x" title="关闭"></button>
+          </div>
+        </div>
+      </header>
+
+      <nav class="menubar" id="menubar" aria-label="主菜单">
+        <div class="menu-items" id="menu-items"></div>
+        <div class="menubar-actions">
+          <div class="mode-switch" id="view-modes" role="group" aria-label="视图模式">
+            <button data-mode="edit" data-icon="pencil" class="active" title="仅编辑（默认）">编辑</button>
+            <button data-mode="split" data-icon="columns" title="编辑 + 预览">分屏</button>
+            <button data-mode="preview" data-icon="eye" title="仅预览">预览</button>
+          </div>
+          <span class="menu-sep-v"></span>
+          <button class="ghost-btn" id="btn-present" data-icon="presentation" title="幻灯片演示 (F5)">演示</button>
+          <div class="dropdown-anchor">
+            <button class="ghost-btn" id="btn-export" data-icon="download" title="导出为多种格式">导出 <span class="chev" data-icon="chevron-down"></span></button>
+            <div class="dropdown" id="export-menu" hidden></div>
+          </div>
+        </div>
+      </nav>
+
+      <div class="workspace">
+        <aside class="sidebar" id="sidebar">
+          <div class="sidebar-header">
+            <span class="sidebar-title">文档</span>
+            <div class="sidebar-header-actions">
+              <button class="icon-btn sm" id="btn-new" data-icon="plus" title="新建文档 (Ctrl+Alt+N)"></button>
+              <button class="icon-btn sm" id="btn-import" data-icon="upload" title="导入 MD / HTML / DOCX / PDF / PPTX"></button>
+            </div>
+          </div>
+          <label class="search-field"><span data-icon="search"></span><input id="doc-search" placeholder="筛选文档" spellcheck="false" /></label>
+          <div class="doc-list" id="doc-list"></div>
+          <div class="sidebar-footer">
+            <button class="text-btn" id="btn-backup" data-icon="archive">备份</button>
+            <button class="text-btn" id="btn-restore" data-icon="rotate-ccw">恢复</button>
+          </div>
+        </aside>
+
+        <div class="splitter" id="sidebar-splitter" title="拖动调整侧栏宽度"></div>
+
+        <main class="main" id="main">
+          <section class="pane pane-editor" id="pane-editor">
+            <div class="editor-toolbar" id="toolbar"></div>
+            <div id="editor" class="editor-host"></div>
+          </section>
+
+          <div class="splitter" id="pane-splitter" title="拖动调整分屏比例"></div>
+
+          <section class="pane pane-preview" id="pane-preview">
+            <div class="pane-label">
+              <span class="pane-label-text">预览</span>
+              <span class="pane-hint" id="preview-hint"></span>
+              <button class="icon-btn sm" id="btn-outline" data-icon="list-tree" title="文档大纲"></button>
+            </div>
+            <div class="preview-scroll" id="preview-scroll">
+              <article class="markdown-body" id="preview"></article>
+            </div>
+          </section>
+
+          <aside class="outline-panel" id="outline-panel" hidden>
+            <div class="outline-head">大纲<button class="icon-btn sm" id="btn-close-outline" data-icon="x"></button></div>
+            <nav id="outline-list" class="outline-list"></nav>
+          </aside>
+        </main>
+      </div>
+
+      <footer class="statusbar">
+        <div class="status-left">
+          <span id="stat-word">0 词</span><span id="stat-char">0 字符</span><span id="stat-line">1 行</span><span id="stat-pos">Ln 1, Col 1</span>
+        </div>
+        <div class="status-right">
+          <span id="stat-sync">仅本地</span><span id="stat-theme">浅色</span><span class="status-brand">SuperEditor v1.2</span>
+        </div>
+      </footer>
+
+      <div class="slides-overlay" id="slides-overlay" hidden>
+        <div class="slides-stage" id="slides-stage"></div>
+        <div class="slides-controls">
+          <button class="slide-btn" id="slide-prev" data-icon="chevron-left" title="上一页"></button>
+          <span id="slide-index" class="slide-index">1 / 1</span>
+          <button class="slide-btn" id="slide-next" data-icon="chevron-right" title="下一页"></button>
+          <span class="slide-sep"></span>
+          <button class="slide-btn" id="slide-fullscreen" data-icon="maximize" title="全屏"></button>
+          <button class="slide-btn" id="slide-exit" data-icon="x" title="退出演示 (Esc)"></button>
+        </div>
+        <div class="slides-progress"><div id="slides-progress-bar"></div></div>
+      </div>
+
+      <div class="modal-backdrop" id="palette-backdrop" hidden>
+        <div class="command-palette" role="dialog" aria-label="命令面板">
+          <div class="palette-input-row"><span data-icon="search"></span><input id="palette-input" placeholder="输入命令或搜索文档…" spellcheck="false" /><kbd>ESC</kbd></div>
+          <div class="palette-results" id="palette-results"></div>
+          <div class="palette-foot">↑ ↓ 选择 <i></i> Enter 执行 <i></i> Esc 关闭</div>
+        </div>
+      </div>
+
+      <div class="modal-backdrop" id="modal-backdrop" hidden><div class="dialog" id="dialog" role="dialog"></div></div>
+
+      <div class="toast-stack" id="toast-stack" aria-live="polite"></div>
+      <div class="lightbox" id="lightbox" hidden><img id="lightbox-img" alt="放大预览" /></div>
+      <input type="file" id="file-input" multiple hidden />
+      <input type="file" id="backup-input" accept=".json,application/json" hidden />
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

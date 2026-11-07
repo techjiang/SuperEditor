@@ -1,0 +1,67 @@
+.slides-overlay {
+  position: fixed; inset: 0; z-index: 120;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 26px 26px 16px;
+  background: #111316;
+}
+.slides-stage { flex: 1; min-height: 0; width: 100%; display: grid; place-items: center; transition: opacity .1s; }
+.slides-stage.is-blank { opacity: 0; }
+
+.slide-card {
+  --bg-1: #ffffff; --bg-2: #f3f4f6; --bg-3: #e8eaee;
+  --border: #cdd2da; --border-soft: #e0e3e9; --border-strong: #adb5c0;
+  --text-1: #1d2128; --text-2: #4c545f; --text-3: #757d88; --text-4: #a1a8b2;
+  --accent: #2b62a8; --accent-soft: #e3ebf6;
+  --syn-heading: #2b62a8; --syn-link: #1f5fa8; --syn-code: #9a3d63; --syn-quote: #6b7280;
+  --syn-marker: #7b8390; --syn-keyword: #8a3ea0; --syn-string: #137a52;
+  --syn-number: #9a5a12; --syn-comment: #7c848f; --syn-fn: #2b62a8;
+  --code-bg: #f7f8fa; --code-head: #eff1f4; --code-text: #262b34;
+  --table-head: #f0f2f5; --table-stripe: #fafbfc;
+  --body-font: "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+  --mono-font: Consolas, "Cascadia Mono", monospace;
+  color-scheme: light;
+  position: relative;
+  width: min(1080px, 94vw);
+  height: min(610px, 76vh);
+  display: flex; flex-direction: column;
+  background: #fff;
+  border: 1px solid #8d939c;
+  overflow: hidden;
+}
+.slide-brand { flex: none; display: flex; align-items: center; gap: 6px; padding: 14px 42px 0; color: #8b9199; font: 10px var(--mono-font); }
+.slide-brand .app-logo { width: 14px; height: 14px; color: #2b62a8; }
+.slide-card .markdown-body {
+  flex: 1; min-height: 0; overflow-y: auto;
+  max-width: none; margin: 0; padding: 24px 46px 8px;
+  background: transparent; border: 0; box-shadow: none;
+  font-size: 20px; line-height: 1.75;
+}
+.slide-card .markdown-body > :first-child { margin-top: 0; }
+.slide-card .markdown-body h1 { font-size: 2.1em; margin: .1em 0 .5em; }
+.slide-card .markdown-body h2 { font-size: 1.55em; border-bottom: 0; padding-bottom: 0; }
+.slide-card .markdown-body h3 { font-size: 1.25em; }
+.slide-card .markdown-body li { margin: .38em 0; }
+.slide-card .markdown-body .md-heading .heading-anchor { display: none; }
+.slide-card .markdown-body table { font-size: .86em; }
+.slide-card .markdown-body .code-block pre { font-size: 14px; }
+.slide-card .mermaid-box svg { max-height: 280px; }
+.slide-foot { flex: none; display: flex; justify-content: space-between; padding: 8px 42px 14px; color: #9aa0a8; font: 10px var(--mono-font); }
+
+.slides-controls {
+  flex: none; display: flex; align-items: center; gap: 2px; margin-top: 12px;
+  padding: 3px; border: 1px solid #34383e; background: #1a1d21;
+}
+.slide-btn { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; background: transparent; color: #c9ced5; }
+.slide-btn:hover { background: #30353c; color: #fff; }
+.slide-index { min-width: 58px; text-align: center; color: #c9ced5; font: 11px var(--mono-font); }
+.slide-sep { width: 1px; height: 15px; margin: 0 4px; background: #3a3f46; }
+.slides-progress { flex: none; width: min(1080px, 94vw); height: 2px; margin-top: 9px; background: #2a2e34; }
+.slides-progress > div { height: 100%; width: 0; background: #5c8fc7; }
+body.presenting { overflow: hidden; }
+
+@media (max-width: 760px) {
+  .slide-card { height: 74vh; }
+  .slide-brand { padding: 12px 20px 0; }
+  .slide-card .markdown-body { padding: 18px 20px; font-size: 16px; }
+  .slide-foot { padding: 6px 20px 12px; }
+}

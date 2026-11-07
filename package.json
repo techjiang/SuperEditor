@@ -1,0 +1,90 @@
+{
+  "name": "super-editor",
+  "version": "1.2.0",
+  "private": true,
+  "type": "module",
+  "description": "同一个世界，同一个互联网！SuperEditor - 本地优先的 Markdown 桌面应用，支持 PPT / PDF / Word 等多格式导入导出",
+  "author": "科技酱 <official@tech.asoe.cn> (https://www.asoe.cn)",
+  "license": "MIT",
+  "homepage": "https://www.asoe.cn",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/techjiang/SuperEditor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/techjiang/SuperEditor/issues",
+    "email": "official@tech.asoe.cn"
+  },
+  "main": "desktop/main.cjs",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "gen:logo": "node tools/gen-logo.mjs",
+    "desktop": "electron .",
+    "desktop:dev": "electron . --dev",
+    "desktop:smoke": "electron . --smoke",
+    "dist:win": "npm run build && powershell -ExecutionPolicy Bypass -File tools/build-pkg.ps1"
+  },
+  "dependencies": {
+    "@codemirror/commands": "^6.11.1",
+    "@codemirror/lang-markdown": "^6.5.2",
+    "@codemirror/language": "^6.13.1",
+    "@codemirror/language-data": "^6.5.2",
+    "@codemirror/search": "^6.7.2",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.15",
+    "@lezer/highlight": "^1.2.5",
+    "codemirror": "^6.0.2",
+    "docx": "^9.15.2",
+    "dompurify": "^3.4.17",
+    "highlight.js": "^11.12.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
+    "jszip": "^3.10.2",
+    "katex": "^0.19.1",
+    "mammoth": "^1.13.0",
+    "marked": "^18.1.3",
+    "mermaid": "^12.3.0",
+    "pdfjs-dist": "^6.5.438",
+    "pptxgenjs": "^4.0.1",
+    "turndown": "^7.2.5",
+    "turndown-plugin-gfm": "^1.0.2"
+  },
+  "devDependencies": {
+    "electron": "^38.8.6",
+    "electron-builder": "^26.18.0",
+    "vite": "^8.3.6"
+  },
+  "build": {
+    "appId": "cn.asoe.supereditor",
+    "productName": "SuperEditor",
+    "copyright": "Copyright © 2026 科技酱",
+    "directories": {
+      "output": "desktop-release"
+    },
+    "electronDist": "node_modules/electron/dist",
+    "files": [
+      "dist/**/*",
+      "desktop/**/*",
+      "public/**/*",
+      "package.json"
+    ],
+    "win": {
+      "icon": "public/icons/app.ico",
+      "target": ["nsis", "dir"],
+      "fileAssociations": [
+        { "ext": "md", "name": "Markdown 文档", "role": "Editor", "icon": "public/icons/app.ico" }
+      ]
+    },
+    "nsis": {
+      "artifactName": "SuperEditor-Setup-${version}.${ext}",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SuperEditor",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "asar": false
+  }
+}
