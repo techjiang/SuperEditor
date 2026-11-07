@@ -8,7 +8,9 @@ const DEV = process.argv.includes('--dev');
 const SMOKE = process.argv.includes('--smoke');
 const ROOT = path.join(__dirname, '..');
 const DIST = path.join(ROOT, 'dist');
-const ICON = path.join(ROOT, 'public', 'icons', 'app.ico');
+// 窗口与托盘使用 PNG（Electron 解析最稳定）；exe 资源、安装包与
+// 快捷方式使用同几何生成的 app.ico，由 tools/build-pkg.ps1 注入。
+const ICON = path.join(ROOT, 'public', 'icons', 'icon-256.png');
 const USER_DIR = app.getPath('userData');
 const WORKSPACE_FILE = path.join(USER_DIR, 'workspace.json');
 const FOLDER_FILE = path.join(USER_DIR, 'sync-folder.txt');

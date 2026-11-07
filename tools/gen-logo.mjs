@@ -59,7 +59,7 @@ function hexToRgb(hex) {
   return [parseInt(v.slice(0, 2), 16), parseInt(v.slice(2, 4), 16), parseInt(v.slice(4, 6), 16)];
 }
 
-function rasterize(size, rects, rgb, scale = 4, inset = 0) {
+function rasterizeRgba(size, rects, rgb, scale = 4, inset = 0) {
   const ss = size * scale;
   const mask = new Uint8Array(ss * ss);
   const unit = ss / LOGO_VIEWBOX;
@@ -88,17 +88,51 @@ function rasterize(size, rects, rgb, scale = 4, inset = 0) {
       rgba[o + 3] = Math.round(sum / (scale * scale));
     }
   }
-  return encodePng(size, rgba);
+  return rgba;
 }
 
-function buildIco(entries) {
+// Windows 图标资源（exe / 快捷方式 / 任务栏）要求标准 DIB(BMP) 条目。
+// PNG 条目虽然 NSIS 能读，但资源管理器、.NET、rcedit 常无法解析，
+// 会导致桌面与 exe 显示回退成 Electron 默认图标。
+function dibEntry(size, rgba) {
+  const header = Buffer.alloc(40);
+  header.writeUInt32LE(40, 0);        // biSize
+  header.writeInt32LE(size, 4);       // biWidth
+  header.writeInt32LE(size * 2, 8);   // biHeight = XOR + AND mask
+  header.writeUInt16LE(1, 12);        // biPlanes
+  header.writeUInt16LE(32, 14);       // biBitCount
+  header.writeUInt32LE(0, 16);        // BI_RGB
+  header.writeUInt32LE(0, 20);        // biSizeImage
+  header.writeInt32LE(0, 24);
+  header.writeInt32LE(0, 28);
+  header.writeUInt32LE(0, 32);
+  header.writeUInt32LE(0, 36);
+
+  const xor = Buffer.alloc(size * size * 4);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const s = ((size - 1 - y) * size + x) * 4; // DIB 自下而上
+      const d = (y * size + x) * 4;
+      xor[d] = rgba[s + 2];       // B
+      xor[d + 1] = rgba[s + 1];   // G
+      xor[d + 2] = rgba[s];       // R
+      xor[d + 3] = rgba[s + 3];   // A
+    }
+  }
+  const maskRow = Math.ceil(size / 32) * 4; // 1bpp AND mask，每行 4 字节对齐
+  const andMask = Buffer.alloc(maskRow * size); // 全 0：透明度由 alpha 通道决定
+  return Buffer.concat([header, xor, andMask]);
+}
+
+function buildIco(sizes, rgbaOf) {
+  const entries = sizes.map((size) => ({ size, data: dibEntry(size, rgbaOf.get(size)) }));
   const header = Buffer.alloc(6);
   header.writeUInt16LE(0, 0);
   header.writeUInt16LE(1, 2);
   header.writeUInt16LE(entries.length, 4);
   let offset = 6 + 16 * entries.length;
   const dir = [];
-  for (const { size, png } of entries) {
+  for (const { size, data } of entries) {
     const d = Buffer.alloc(16);
     d[0] = size >= 256 ? 0 : size;
     d[1] = size >= 256 ? 0 : size;
@@ -106,29 +140,30 @@ function buildIco(entries) {
     d[3] = 0;
     d.writeUInt16LE(1, 4);
     d.writeUInt16LE(32, 6);
-    d.writeUInt32LE(png.length, 8);
+    d.writeUInt32LE(data.length, 8);
     d.writeUInt32LE(offset, 12);
-    offset += png.length;
+    offset += data.length;
     dir.push(d);
   }
-  return Buffer.concat([header, ...dir, ...entries.map((e) => e.png)]);
+  return Buffer.concat([header, ...dir, ...entries.map((e) => e.data)]);
 }
 
 const rgb = hexToRgb(BRAND.color);
 const SIZES = [16, 24, 32, 48, 64, 96, 128, 180, 192, 256, 512];
-const pngs = new Map();
+const rgbaOf = new Map();
 
 for (const size of SIZES) {
   const rects = size <= 32 ? LOGO_RECTS_SIMPLE : LOGO_RECTS;
-  const png = rasterize(size, rects, rgb, 4);
-  pngs.set(size, png);
-  writeFileSync(join(ICONS, `icon-${size}.png`), png);
+  const rgba = rasterizeRgba(size, rects, rgb, 4);
+  rgbaOf.set(size, rgba);
+  writeFileSync(join(ICONS, `icon-${size}.png`), encodePng(size, rgba));
 }
 
-writeFileSync(join(ICONS, 'icon-maskable-512.png'), rasterize(512, LOGO_RECTS, rgb, 4, 5));
-writeFileSync(join(ICONS, 'app.ico'), buildIco([16, 32, 48, 256].map((size) => ({ size, png: pngs.get(size) }))));
+writeFileSync(join(ICONS, 'icon-maskable-512.png'), encodePng(512, rasterizeRgba(512, LOGO_RECTS, rgb, 4, 5)));
+// exe、快捷方式、任务栏、资源管理器分别使用不同尺寸，全部提供独立位图
+writeFileSync(join(ICONS, 'app.ico'), buildIco([16, 24, 32, 48, 64, 128, 256], rgbaOf));
+writeFileSync(join(PUBLIC, 'favicon.ico'), buildIco([16, 32, 48], rgbaOf));
 writeFileSync(join(PUBLIC, 'favicon.svg'), logoSvgFile({ color: BRAND.color }));
-writeFileSync(join(PUBLIC, 'favicon.ico'), buildIco([16, 32, 48].map((size) => ({ size, png: pngs.get(size) }))));
 writeFileSync(join(ICONS, 'logo.svg'), logoSvgFile({ color: BRAND.color }));
 writeFileSync(join(ICONS, 'logo-light.svg'), logoSvgFile({ color: BRAND.darkColor }));
 
@@ -151,4 +186,4 @@ const manifest = {
 writeFileSync(join(PUBLIC, 'manifest.webmanifest'), `${JSON.stringify(manifest, null, 2)}\n`);
 writeFileSync(join(ICONS, 'logo-markup.svg'), `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${LOGO_VIEWBOX} ${LOGO_VIEWBOX}" fill="currentColor">${logoMarkup()}</svg>`);
 
-console.log(`Generated ${SIZES.length} PNG icons, app.ico, favicon.svg, manifest.webmanifest`);
+console.log(`Generated ${SIZES.length} PNG icons, DIB-format app.ico / favicon.ico, SVGs and manifest.webmanifest`);

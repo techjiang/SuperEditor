@@ -11,6 +11,7 @@ $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $stage = Join-Path $root 'pkg-stage'
 $out = Join-Path $root 'desktop-release'
 $stamp = Get-Date -Format 'yyyyMMddHHmmss'
+$version = (Get-Content (Join-Path $root 'package.json') -Raw -Encoding UTF8 | ConvertFrom-Json).version
 
 Get-Process -ErrorAction SilentlyContinue |
   Where-Object { $_.ProcessName -eq 'SuperEditor' -or $_.ProcessName -eq 'electron' } |
@@ -27,6 +28,18 @@ Copy-Item (Join-Path $root 'node_modules/electron/dist/*') $stage -Recurse -Forc
 $exeSrc = Join-Path $stage 'electron.exe'
 $exeDst = Join-Path $stage 'SuperEditor.exe'
 if (Test-Path $exeSrc) { Copy-Item $exeSrc $exeDst -Force }
+
+# 1b) 注入 exe 图标资源与版本信息。Electron 原始 exe 带的是默认原子图标，
+#     直接复制改名不会改变任务栏/资源管理器/快捷方式显示的图标。
+$rc = Join-Path $root 'node_modules/electron-winstaller/vendor/rcedit.exe'
+$ico = Join-Path $root 'public/icons/app.ico'
+if (Test-Path $rc) {
+  & $rc $exeDst --set-icon $ico --set-version-string 'ProductName' 'SuperEditor' --set-version-string 'CompanyName' 'TechSauce' --set-version-string 'FileDescription' 'SuperEditor - Markdown Editor' --set-version-string 'LegalCopyright' 'Copyright (c) 2026 TechSauce' --set-file-version $version --set-product-version $version
+  if ($LASTEXITCODE -eq 0) { Write-Output "ICON: app.ico applied to SuperEditor.exe" }
+  else { Write-Warning "rcedit failed (exit $LASTEXITCODE)" }
+} else {
+  Write-Warning 'rcedit.exe not found - exe icon unchanged'
+}
 
 # 2) 把前端产物 + 主进程代码打包进 resources/app.asar
 $appSrc = Join-Path $root "pkg-appsrc-$stamp"
@@ -49,8 +62,6 @@ if (-not (Test-Path $wd)) { New-Item -ItemType Directory -Force $wd | Out-Null }
 Copy-Item (Join-Path $stage '*') $wd -Recurse -Force
 
 Write-Output "EXE: $(Join-Path $wd 'SuperEditor.exe')"
-
-$version = (Get-Content (Join-Path $root 'package.json') -Raw -Encoding UTF8 | ConvertFrom-Json).version
 
 # 5) Portable build: a clean zip, no installer, no registry changes
 $portableRoot = Join-Path $root "portable-stage-$stamp"

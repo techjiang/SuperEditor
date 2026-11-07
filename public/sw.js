@@ -1,5 +1,9 @@
-const CACHE = 'supereditor-v1';
-const CORE = ['./', './index.html', './favicon.svg', './manifest.webmanifest', './icons/icon-192.png'];
+const CACHE = 'supereditor-v2';
+const CORE = [
+  './', './index.html', './favicon.svg', './favicon.ico',
+  './manifest.webmanifest', './icons/app.ico',
+  './icons/icon-192.png', './icons/icon-512.png',
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -31,6 +35,9 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       }).catch(() => cached || (request.mode === 'navigate' ? caches.match('./index.html') : Response.error()));
+      // 品牌资源优先取网络，避免 Logo 更新后旧缓存一直生效
+      const path = new URL(request.url).pathname;
+      if (/favicon|\/icons\//.test(path)) return network;
       return cached || network;
     })
   );
