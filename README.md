@@ -157,6 +157,23 @@ Vite 8 · Electron 38 · CodeMirror 6 · Marked · DOMPurify · highlight.js · 
 
 发布页：https://github.com/techjiang/SuperEditor/releases
 
+### 重装后桌面图标仍是旧 Logo？
+
+Windows 按「exe 路径 + 图标索引」缓存图标。若在同一路径装过旧版本，覆盖安装后桌面快捷方式可能仍显示缓存中的旧图标 —— 此时 exe 及图标资源其实已经是正确的（可在「关于」里核对版本，或直接打开安装目录里的 `SuperEditor.exe` 查看文件图标）。
+
+任选一种处理：
+
+1. 卸载后重新安装，然后注销或重启一次电脑（最省事、最可靠）；
+2. 或在 PowerShell 里重建图标缓存：
+
+```powershell
+Stop-Process -Name explorer -Force
+Remove-Item "$env:LOCALAPPDATA\Microsoft\Windows\Explorer\iconcache_*.db" -Force
+Start-Process explorer.exe
+```
+
+任务栏会短暂消失后自动恢复，属正常现象。安装版与便携版的程序图标本身已随版本同步更新。
+
 ## 作者
 
 **科技酱** · 同一个世界，同一个互联网！
